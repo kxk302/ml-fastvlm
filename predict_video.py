@@ -1,9 +1,10 @@
 # Prereqs (once): pip install opencv-python pillow torch
 # plus the FastVLM repo installed (`pip install -e .`)
 
-MODEL_DIR = "./checkpoints/llava-fastvithd_7b_stage3"
-VIDEO_PATH = "/Users/970591/Desktop/VibeCoding/nsflow.mp4"
-QUESTION = "What is happening in the video?"
+import argparse
+
+DEFAULT_NUM_OF_FRAMES = 1
+DEFAULT_FRAMES_PER_SECONDS = 30.0
 
 import cv2
 import torch
@@ -131,16 +132,18 @@ def ask_frame(
     return tokenizer.batch_decode(out_ids, skip_special_tokens=True)[0].strip()
 
 
-def sample_frames(video_path: str, expected_num_of_frames: int = 8):
+def sample_frames(video_path: str, expected_num_of_frames: int):
     # Like callling open() on a file
     cap = cv2.VideoCapture(video_path)
     assert cap.isOpened(), f"Cannot open {video_path}"
 
     # Get total number of frames in video
-    actual_num_of_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 1
+    actual_num_of_frames = (
+        int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or DEFAULT_NUM_OF_FRAMES
+    )
 
     # Get the number of frames the video plays each second
-    frames_per_sec = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    frames_per_sec = cap.get(cv2.CAP_PROP_FPS) or DEFAULT_FRAMES_PER_SECONDS
 
     # The inner list comprehension produces 'expected_num_of_frames' evenly spaced fractional
     # indices between 0 and 'actual_num_of_frames'-1. Each fractional index is rounded to the
@@ -184,9 +187,36 @@ def sample_frames(video_path: str, expected_num_of_frames: int = 8):
 
 
 if __name__ == "__main__":
-    tokenizer, model, image_processor, device = load_fastvlm(MODEL_DIR)
-    for pillow_image, timestamp in sample_frames(VIDEO_PATH, expected_num_of_frames=8):
+    parser = argparse.ArgumentParser("ArgumentParser for querying a video")
+    parser.add_argument(
+        "--model-path",
+        type=str,
+        default="./checkpoints/llava-fastvithd_0.5b_stage3",
+        help="Path to the FastVLM model",
+    )
+    parser.add_argument(
+        "--video-path", type=str, required=True, help="Path to the video file"
+    )
+    parser.add_argument(
+        "--prompt",
+        type=str,
+        required=True,
+        help="Prompt for Visual Language Model (VLM).",
+    )
+    parser.add_argument(
+        "--expected_num_of_frames",
+        type=int,
+        default=8,
+        help="Expected number of frames",
+    )
+
+    args = parser.parse_args()
+
+    tokenizer, model, image_processor, device = load_fastvlm(args.model_path)
+    for pillow_image, timestamp in sample_frames(
+        args.video_path, args.expected_num_of_frames
+    ):
         answer = ask_frame(
-            tokenizer, model, image_processor, device, QUESTION, pillow_image
+            tokenizer, model, image_processor, device, args.prompt, pillow_image
         )
         print(f"[t={timestamp:6.2f}s] {answer}")
