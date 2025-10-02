@@ -87,7 +87,8 @@ def prompt_with_image_tokens(question: str, model):
 
 @torch.inference_mode()
 def ask_frame(
-    tokenizer, model, image_processor, device, question: str, pillow_image: Image.Image
+    tokenizer, model, image_processor, device, question: str, pillow_image: Image.Image,
+    max_new_tokens, temperature
 ):
     # Get prompt for question
     prompt = prompt_with_image_tokens(question, model)
@@ -123,9 +124,9 @@ def ask_frame(
         input_ids,
         images=img,
         image_sizes=[pillow_image.size],
-        max_new_tokens=128,  # The maximum number of tokens the model is allowed to generate for its answer
+        max_new_tokens=max_new_tokens,  # The maximum number of tokens the model is allowed to generate for its answer
         do_sample=True,  # Do stochastic sampling instead of greedy decoding. Makes the model’s answers more diverse
-        temperature=0.2,  # Temperature (<1): more deterministic answers. Temperature (>1): more diversee answers
+        temperature=temperature,  # Temperature (<1): more deterministic answers. Temperature (>1): more diversee answers
     )
 
     # Take the raw token IDs output by the model and turn them back into a clean, human-readable string
@@ -209,6 +210,18 @@ if __name__ == "__main__":
         default=8,
         help="Expected number of frames",
     )
+    parser.add_argument(
+        "--max_new_tokens",
+        type=int,
+        default=128,
+        help="The maximum number of tokens the model is allowed to generate for its answer",
+    )
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=0.2,
+        help="Temperature (<1): more deterministic answers. Temperature (>1): more diversee answers",
+    )
 
     args = parser.parse_args()
 
@@ -217,6 +230,6 @@ if __name__ == "__main__":
         args.video_path, args.expected_num_of_frames
     ):
         answer = ask_frame(
-            tokenizer, model, image_processor, device, args.prompt, pillow_image
+            tokenizer, model, image_processor, device, args.prompt, pillow_image, args.max_new_tokens, args.temperature
         )
         print(f"[t={timestamp:6.2f}s] {answer}")
