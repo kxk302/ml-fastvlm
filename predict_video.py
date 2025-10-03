@@ -1,5 +1,9 @@
-# Prereqs (once): pip install opencv-python pillow torch
-# plus the FastVLM repo installed (`pip install -e .`)
+# Prerequisites:
+#
+# Install FastVLM repo: pip install -e .
+# Install oepncv: pip install opencv-python==4.8.0.74
+# Install pillow torch: pip install pillow torch
+#
 
 import argparse
 
