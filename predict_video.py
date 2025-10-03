@@ -100,7 +100,7 @@ def ask_frame(
     # Prepare the model input tensor from a text+image prompt so it can be fed into a vision-language model
     input_ids = (
         # tokenizer_image_token(): helper function that uses the tokenizer to turn the prompt string into token IDs
-        #     IMAGE_TOKEN_INDEX tells it which special token represents an image. during tokenization,
+        #     IMAGE_TOKEN_INDEX tells it which special token represents an image. During tokenization,
         #     functions like tokenizer_image_token(...) replace the <image> placeholder in the prompt
         #     with IMAGE_TOKEN_INDEX
         # unsqueeze(0): Adds a new batch dimension at the start. If the tensor shape was [seq_len],
@@ -115,9 +115,9 @@ def ask_frame(
     img = process_images([pillow_image], image_processor, model.config)[0].to(device)
 
     # If you are on GPU:
-    #   casts the tensor to torch.float16 (half precision). Benefit: faster inference, lower memory usage on GPU
+    #   Casts the tensor to torch.float16 (half precision). Benefit: faster inference, lower memory usage on GPU
     # If you are on CPU:
-    #   keep it in torch.float32 (full precision). CPUs generally don’t benefit from float16 and may not support it well
+    #   Keep it in torch.float32 (full precision). CPUs generally don’t benefit from float16 and may not support it well
     # unsqueeze(0): Adds a new batch dimension at the front
     img = img.to(torch.float16 if device != "cpu" else torch.float32).unsqueeze(0)
 
